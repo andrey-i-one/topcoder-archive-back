@@ -1,0 +1,5 @@
+description: Неверные параметры запроса
+content:
+  application/json:
+    schema:
+      $ref: './message.yaml#/components/schemas/Message'

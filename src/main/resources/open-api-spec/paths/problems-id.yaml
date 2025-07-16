@@ -1,0 +1,32 @@
+description: ''
+summary: ''
+get:
+  summary: ''
+  operationId: retrieveProblemById
+  tags:
+    - Problems
+  parameters:
+    - name: id
+      in: path
+      description: Номер задачи
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '200':
+      description: ''
+      content:
+        application/json:
+          schema:
+            $ref: '../dto/problem.yaml#/components/schemas/ProblemDetailsDto'
+    '500':
+      $ref: '../models/500.yaml'
+    '422':
+      $ref: '../models/422.yaml'
+    '400':
+      $ref: '../models/400.yaml'
+    '403':
+      $ref: '../models/403.yaml'
+    '401':
+      $ref: '../models/401.yaml'

@@ -1,0 +1,5 @@
+description: Неавторизован
+content:
+  application/json:
+    schema:
+      $ref: './message.yaml#/components/schemas/Message'

@@ -1,0 +1,63 @@
+components:
+  schemas:
+    ProblemDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        srm:
+          type: string
+        date:
+          type: string
+        tags:
+          type: string
+        div1Level:
+          type: string
+        div2Level:
+          type: string
+        div1SuccessRate:
+          type: string
+        div2SuccessRate:
+          type: string
+    ProblemDetailsDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        srm:
+          type: string
+        date:
+          type: string
+        tags:
+          type: string
+        div1Level:
+          type: string
+        div2Level:
+          type: string
+        definition:
+          type: string
+        constraints:
+          type: string
+        div1SuccessRate:
+          type: string
+        div2SuccessRate:
+          type: string
+        statement:
+          type: string
+        examples:
+          type: string
+    ProblemsPageDto:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '../dto/problem.yaml#/components/schemas/ProblemDto'
+        pageInfo:
+          $ref: '../models/page-wrap.yaml#/components/schemas/PageInfo'

@@ -1,0 +1,5 @@
+description: Доступ запрещен
+content:
+  application/json:
+    schema:
+      $ref: './message.yaml#/components/schemas/Message'
