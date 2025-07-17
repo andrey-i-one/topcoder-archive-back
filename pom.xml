@@ -163,7 +163,11 @@
             <artifactId>querydsl-jpa</artifactId>
             <version>${querydsl.version}</version>
             <classifier>jakarta</classifier>
-        </dependency>        
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

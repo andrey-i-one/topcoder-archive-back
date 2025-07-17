@@ -14,6 +14,7 @@ import ru.sibint.topcoder.generated.dto.ProblemsPageDto;
 import ru.sibint.topcoder.model.Problem;
 import ru.sibint.topcoder.model.QProblem;
 import ru.sibint.topcoder.repos.ProblemRepository;
+import ru.sibint.topcoder.utils.ExamplesParser;
 
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -24,6 +25,7 @@ import java.util.UUID;
 public class ProblemsService {
 
     private final ProblemRepository problemRepository;
+    private final ExamplesParser examplesParser;
     private final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
 
     public ProblemsPageDto retrieveProblems(Integer page,
@@ -36,9 +38,9 @@ public class ProblemsService {
         Pageable pageable = PageRequest.of(page, perPage).withSort(Sort.by(Sort.Direction.valueOf(sortOrder), sortField));
         Page<Problem> pages = problemRepository.findAll(
                 QProblem.problem.tags.likeIgnoreCase("%" + (tags == null ? "" : tags) + "%").and(
-                        div1Level == null ? QProblem.problem.div1Level.isNotNull() : QProblem.problem.div1Level.equalsIgnoreCase(div1Level)
+                        div1Level == null ? QProblem.problem.div1Level.isNotNull() : QProblem.problem.div1Level.likeIgnoreCase("%" + div1Level + "%")
                 ).and(
-                        div2Level == null ? QProblem.problem.div2Level.isNotNull() : QProblem.problem.div2Level.equalsIgnoreCase(div2Level)
+                        div2Level == null ? QProblem.problem.div2Level.isNotNull() : QProblem.problem.div2Level.likeIgnoreCase("%" + div2Level + "%")
                 ), pageable);
         return ProblemsPageDto.builder()
                 .data(pages.getContent().stream().map(it -> ProblemDto.builder()
@@ -77,6 +79,7 @@ public class ProblemsService {
                 .tags(problem.getTags())
                 .statement(problem.getStatement())
                 .examples(problem.getExamples())
+                .tests(examplesParser.parseExamples("<root>" + problem.getExamples() + "</root>"))
                 .build();
     }
 

@@ -15,3 +15,5 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         default_schema: cdm
+server:
+  port: 8084
