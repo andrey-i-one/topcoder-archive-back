@@ -53,6 +53,17 @@ components:
         examples:
           type: string
         tests:
+          type: array
+          items:
+            $ref: '../dto/problem.yaml#/components/schemas/TestDto'
+    TestDto:
+      type: object
+      properties:
+        id:
+          type: string
+        input:
+          type: string
+        expectedOutput:
           type: string
     ProblemsPageDto:
       type: object
