@@ -3,7 +3,7 @@ spring:
     serialization:
       indent_output: true
   datasource:
-    url: jdbc:postgresql://topcoderdb:5432/postgres
+    url: jdbc:postgresql://127.0.0.1:5432/postgres
     username: postgres
     password: topcoder872
     hikari:
@@ -15,7 +15,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         default_schema: cdm
-tempDir: "/temp/"
+tempDir: "D:/temp/"
 compileTimeout: 3000
 server:
   port: 8084

@@ -101,21 +101,38 @@ public class SubmissionService {
         saveToFile(dir + "/run_test.sh", readInputStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("run_test.sh")));
         saveToFile(dir + "/input.txt", test.getInput());
 
-        ProcessBuilder compileProcessBuilder = new ProcessBuilder("sh", "./run_test.sh", className);
-        compileProcessBuilder.directory(workingDir);
-        compileProcessBuilder.redirectErrorStream(true);
-        Process compileProcess = compileProcessBuilder.start();
+        ProcessBuilder runProcessBuilder = new ProcessBuilder("sh", "./run_test.sh", className);
+        runProcessBuilder.directory(workingDir);
+        Process runProcess = runProcessBuilder.start();
         String verdict = "Accepted";
         try {
-            compileProcess.waitFor(compileTimeout, TimeUnit.MILLISECONDS);
+            runProcess.waitFor(compileTimeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             verdict = "Time limit exceeded";
         }
-        if(!isEqualOutput(readOutputFromFile(dir + "/output.txt"), test.getExpectedOutput())) {
+        String actualOutput = readOutputFromFile(dir + "/output.txt");
+        if(!isEqualOutput(actualOutput, test.getExpectedOutput())) {
             verdict = "Wrong answer";
+        }
+        String output = readOutputFromFile(dir + "/metadata.txt");
+        System.out.println(output);
+        String[] outputLines = output.split("\n");
+        String time = null;
+        String memory = null;
+        for(String outputLine: outputLines) {
+            if(outputLine.trim().startsWith("System time (seconds): ")) {
+                time = outputLine.trim().substring("System time (seconds): ".length());
+            }
+            if(outputLine.trim().startsWith("Maximum resident set size (kbytes): ")) {
+                memory = outputLine.trim().substring("Maximum resident set size (kbytes): ".length());
+            }
         }
         return TestResultDto.builder()
                 .verdict(verdict)
+                .output(actualOutput)
+                .expectedOutput(test.getExpectedOutput())
+                .time(time)
+                .memory(memory)
                 .build();
     }
 
