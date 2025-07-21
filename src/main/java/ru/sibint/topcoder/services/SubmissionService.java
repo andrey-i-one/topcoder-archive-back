@@ -66,8 +66,9 @@ public class SubmissionService {
         }
         List<TestResultDto> testResults = new ArrayList<>();
         String overallStatus = "Accepted";
-        for(TestDto test: submissionRequestDto.getTests()) {
-            TestResultDto testResult = runTest(tempDir + submission.getId().toString(), className, test);
+        for(int i = 0; i < submissionRequestDto.getTests().size(); i++) {
+            TestDto test = submissionRequestDto.getTests().get(i);
+            TestResultDto testResult = runTest(i + 1, tempDir + submission.getId().toString(), className, test);
             testResults.add(testResult);
             if(!"Accepted".equals(testResult.getVerdict())) {
                 break;
@@ -96,7 +97,7 @@ public class SubmissionService {
         return readInputStream(compileProcess.getErrorStream());
     }
 
-    private TestResultDto runTest(String dir, String className, TestDto test) throws Exception {
+    private TestResultDto runTest(int id, String dir, String className, TestDto test) throws Exception {
         File workingDir = new File(dir);
         saveToFile(dir + "/run_test.sh", readInputStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("run_test.sh")));
         saveToFile(dir + "/input.txt", test.getInput());
@@ -115,7 +116,6 @@ public class SubmissionService {
             verdict = "Wrong answer";
         }
         String output = readOutputFromFile(dir + "/metadata.txt");
-        System.out.println(output);
         String[] outputLines = output.split("\n");
         String time = null;
         String memory = null;
@@ -128,6 +128,7 @@ public class SubmissionService {
             }
         }
         return TestResultDto.builder()
+                .number(id)
                 .verdict(verdict)
                 .output(actualOutput)
                 .expectedOutput(test.getExpectedOutput())
