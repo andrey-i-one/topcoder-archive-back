@@ -116,10 +116,14 @@ public class SubmissionService {
         runProcessBuilder.directory(workingDir);
         Process runProcess = runProcessBuilder.start();
         String verdict = "Accepted";
+        boolean finished;
         try {
-            runProcess.waitFor(compileTimeout, TimeUnit.MILLISECONDS);
+            finished = runProcess.waitFor(compileTimeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            finished = false;
+        }
+        if(!finished) {
+            runProcess.destroyForcibly();
             return TestResultDto.builder()
                     .number(id)
                     .verdict("Time limit exceeded")

@@ -18,6 +18,7 @@ RUN apt-get update
 RUN apt-get -y install bash
 RUN apt-get -y install time
 RUN apt-get install -y cgroup-tools
+RUN ulimit -S -m 268435456
 # RUN cgcreate -a root -g memory:topcoder256mb
 # RUN echo '268435456' > /sys/fs/cgroup/memory/topcoder256mb/memory.limit_in_bytes
 
