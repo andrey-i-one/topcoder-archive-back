@@ -1,17 +1,25 @@
-FROM harbor.stageogip.ru/hub/bellsoft/liberica-openjdk-alpine-musl:22.0.2-11 AS build
+FROM harbor.stageogip.ru/hub/bellsoft/liberica-openjdk-debian:22 AS build
 
 ARG NEXUS_USER
 ARG NEXUS_PASS
 
 WORKDIR /app
-RUN apk add --no-cache maven
+RUN apt-get update
+RUN apt-get install -y maven
 COPY . .
 
 RUN mvn clean package -DskipTests
 
-FROM harbor.stageogip.ru/hub/bellsoft/liberica-openjdk-alpine-musl:22.0.2-11
+FROM harbor.stageogip.ru/hub/bellsoft/liberica-openjdk-debian:22
 
 ENV ENVIRONMENT=""
+
+RUN apt-get update
+RUN apt-get -y install bash
+RUN apt-get -y install time
+RUN apt-get install -y cgroup-tools
+# RUN cgcreate -a root -g memory:topcoder256mb
+# RUN echo '268435456' > /sys/fs/cgroup/memory/topcoder256mb/memory.limit_in_bytes
 
 WORKDIR /app
 COPY --from=build /app/target/*.jar topcoder-archiver-back.jar

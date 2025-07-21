@@ -59,6 +59,7 @@ public class SubmissionService {
         }
         String result = compile(tempDir + submission.getId().toString(), submissionRequestDto.getSources(), className);
         if(!result.isEmpty()) {
+            FileUtils.deleteDirectory(new File(tempDir + submission.getId().toString()));
             return SubmissionResponseDto.builder()
                     .id(submission.getId())
                     .comment(result)
@@ -118,7 +119,15 @@ public class SubmissionService {
         try {
             runProcess.waitFor(compileTimeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            verdict = "Time limit exceeded";
+            e.printStackTrace();
+            return TestResultDto.builder()
+                    .number(id)
+                    .verdict("Time limit exceeded")
+                    .output(null)
+                    .expectedOutput(test.getExpectedOutput())
+                    .time((compileTimeout / 1000.0) + "")
+                    .memory(null)
+                    .build();
         }
         String actualOutput = readOutputFromFile(dir + "/output.txt");
         if(!isEqualOutput(actualOutput, test.getExpectedOutput())) {
