@@ -17,3 +17,11 @@ ALTER TABLE oj.problem ADD "constraints" text NULL;
 ALTER TABLE oj.problem ADD examples text NULL;
 ALTER TABLE oj.problem ALTER COLUMN id SET NOT NULL;
 ALTER TABLE oj.problem ADD CONSTRAINT problem_unique UNIQUE (id);
+
+CREATE TABLE oj.submission (
+	id varchar(255) NOT NULL,
+	task_id varchar(255) NOT NULL,
+	sources text NULL
+);
+ALTER TABLE oj.submission ADD submit_time timestamp NULL;
+ALTER TABLE oj.submission ADD author varchar(255) NULL;

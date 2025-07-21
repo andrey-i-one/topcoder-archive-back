@@ -15,5 +15,7 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         default_schema: cdm
+tempDir: "D:/temp/"
+compileTimeout: 3000
 server:
   port: 8084

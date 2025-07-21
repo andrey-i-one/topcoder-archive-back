@@ -1,4 +1,4 @@
-description: Доступ запрещен
+description: Forbidden
 content:
   application/json:
     schema:

@@ -1,0 +1,45 @@
+components:
+  schemas:
+    SubmissionRequestDto:
+      type: object
+      properties:
+        author:
+          type: string
+        taskId:
+          type: string
+          format: uuid
+        sources:
+          type: string
+        tests:
+          type: array
+          items:
+            $ref: '../dto/problem.yaml#/components/schemas/TestDto'
+    SubmissionResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        overallVerdict:
+          type: string
+        comment:
+          type: string
+        testsResults:
+          type: array
+          items:
+            $ref: '../dto/submission.yaml#/components/schemas/TestResultDto'
+    TestResultDto:
+      type: object
+      properties:
+        id:
+          type: string
+        verdict:
+          type: string
+        output:
+          type: string
+        expectedOutput:
+          type: string
+        time:
+          type: string
+        memory:
+          type: string

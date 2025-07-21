@@ -1,0 +1,68 @@
+description: 'Submission service'
+summary: 'Submission service'
+post:
+  summary: 'Create submission'
+  operationId: createSubmission
+  tags:
+    - Submissions
+  parameters:
+    - name: Authorization
+      in: header
+      required: false
+      schema:
+        type: string
+  requestBody:
+    description: Create submission request
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../dto/submission.yaml#/components/schemas/SubmissionRequestDto'
+        example:
+  responses:
+    '200':
+      description: 'Returns results of submission'
+      content:
+        application/json:
+          schema:
+            $ref: '../dto/submission.yaml#/components/schemas/SubmissionResponseDto'
+    '500':
+      $ref: '../models/500.yaml'
+    '422':
+      $ref: '../models/422.yaml'
+    '400':
+      $ref: '../models/400.yaml'
+    '403':
+      $ref: '../models/403.yaml'
+    '401':
+      $ref: '../models/401.yaml'
+get:
+  summary: ''
+  operationId: retrieveSubmission
+  tags:
+    - Submissions
+  parameters:
+    - name: id
+      in: query
+      description: Submission id
+      required: true
+      schema:
+        type: integer
+        default: 0
+  responses:
+    '200':
+      description: 'Returns results of submission'
+      content:
+        application/json:
+          schema:
+            $ref: '../dto/submission.yaml#/components/schemas/SubmissionResponseDto'
+    '500':
+      $ref: '../models/500.yaml'
+    '422':
+      $ref: '../models/422.yaml'
+    '400':
+      $ref: '../models/400.yaml'
+    '403':
+      $ref: '../models/403.yaml'
+    '401':
+      $ref: '../models/401.yaml'

@@ -9,17 +9,13 @@ FilterDTO:
     matchMode:
       type: string
       enum: [anyOf, contains, notContains, startsWith, endsWith, notEquals, equals, lt, lto, gt, gto]
-      description: Правило совпадения для фильтрации значения
     field:
       type: string
-      description: Наименование поля по которому будет применяться данное правило фильтрации
     operator:
       type: string
       enum: [and, or]
-      description: Правил объединения фильтров в цепочке фильтрации
     value:
       type: string
-      description: Значение для фильтрации
   example: "[
         {
           \"field\": \"аббревиатура\",

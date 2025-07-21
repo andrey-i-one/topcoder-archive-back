@@ -1,4 +1,4 @@
-description: Неверные параметры запроса
+description: Unprocessable entity
 content:
   application/json:
     schema:

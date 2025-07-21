@@ -9,9 +9,13 @@ servers:
 tags:
   - name: Problems
     description: Problems
+  - name: Submissions
+    description: Submissions
 
 paths:
   /problems:
     $ref: "./paths/problems.yaml"
   /problems/{id}:
     $ref: "./paths/problems-id.yaml"
+  /submission:
+    $ref: "./paths/submission.yaml"

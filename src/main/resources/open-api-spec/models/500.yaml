@@ -1,4 +1,4 @@
-description: Внутренняя ошибка сервера
+description: Internal server error
 content:
   application/json:
     schema:

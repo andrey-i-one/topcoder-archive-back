@@ -2,21 +2,21 @@ components:
   schemas:
     PageInfo:
       type: object
-      description: Объект с информацией по страничному отображению
+      description: Page
       properties:
         totalElements:
           type: integer
           format: int64
-          description: общее количество элементов
+          description: Total elements
         totalPages:
           type: integer
           format: integer
-          description: Общее количество страниц
+          description: Total pages
         number:
           type: integer
           format: integer
-          description: Текущая страница
+          description: Number
         numberOfElements:
           type: integer
           format: integer
-          description: Количество элементов
+          description: Number of elements

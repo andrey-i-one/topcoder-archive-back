@@ -1,4 +1,4 @@
-description: Сервер не смог интерпретировать запрос - невалидная структура/типы данных
+description: Bad request
 content:
   application/json:
     schema:
