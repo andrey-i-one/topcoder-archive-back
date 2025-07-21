@@ -1,0 +1,1 @@
+/usr/bin/time java $1 < input.txt > output.txt

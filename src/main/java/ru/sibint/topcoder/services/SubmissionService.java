@@ -14,15 +14,13 @@ import ru.sibint.topcoder.model.Submission;
 import ru.sibint.topcoder.repos.ProblemRepository;
 import ru.sibint.topcoder.repos.SubmissionRepository;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -85,32 +83,73 @@ public class SubmissionService {
     private String compile(String dir, String sources, String className) throws Exception {
         Files.createDirectories(Path.of(dir));
         File workingDir = new File(dir);
-        File sourcesFile = new File(dir + "/" + className + ".java");
-        PrintWriter printWriter = new PrintWriter(sourcesFile);
-        printWriter.print(sources);
-        printWriter.flush();
-        printWriter.close();
+        saveToFile(dir + "/" + className + ".java", sources);
         ProcessBuilder compileProcessBuilder = new ProcessBuilder("javac", className + ".java");
         compileProcessBuilder.directory(workingDir);
         compileProcessBuilder.redirectErrorStream(true);
         Process compileProcess = compileProcessBuilder.start();
-        BufferedReader in = new BufferedReader(new InputStreamReader(compileProcess.getInputStream()));
-        StringBuilder lines = new StringBuilder();
-        String line = "";
-        while ((line = in.readLine()) != null) {
-            lines.append(line).append("\n");
-        }
         try {
             compileProcess.waitFor(compileTimeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             return "Compilation failed";
         }
-        return lines.toString().trim();
+        return readInputStream(compileProcess.getErrorStream());
     }
 
-    private TestResultDto runTest(String dir, String className, TestDto test) {
+    private TestResultDto runTest(String dir, String className, TestDto test) throws Exception {
+        File workingDir = new File(dir);
+        saveToFile(dir + "/run_test.sh", readInputStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("run_test.sh")));
+        saveToFile(dir + "/input.txt", test.getInput());
+
+        ProcessBuilder compileProcessBuilder = new ProcessBuilder("sh", "./run_test.sh", className);
+        compileProcessBuilder.directory(workingDir);
+        compileProcessBuilder.redirectErrorStream(true);
+        Process compileProcess = compileProcessBuilder.start();
+        String verdict = "Accepted";
+        try {
+            compileProcess.waitFor(compileTimeout, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            verdict = "Time limit exceeded";
+        }
+        if(!isEqualOutput(readOutputFromFile(dir + "/output.txt"), test.getExpectedOutput())) {
+            verdict = "Wrong answer";
+        }
         return TestResultDto.builder()
+                .verdict(verdict)
                 .build();
     }
 
+    private void saveToFile(String fileName, String content) throws Exception {
+        PrintWriter printWriter = new PrintWriter(fileName);
+        printWriter.print(content);
+        printWriter.flush();
+        printWriter.close();
+    }
+
+    private String readInputStream(InputStream is) throws Exception {
+        BufferedReader in = new BufferedReader(new InputStreamReader(is));
+        StringBuilder lines = new StringBuilder();
+        String line;
+        while ((line = in.readLine()) != null) {
+            lines.append(line).append("\n");
+        }
+        return lines.toString().trim();
+    }
+
+    private String readOutputFromFile(String fileName) throws Exception {
+        Scanner scanner = new Scanner(new File(fileName));
+        StringBuilder stringBuilder = new StringBuilder();
+        while(scanner.hasNextLine()) {
+            stringBuilder.append(scanner.nextLine());
+            if(scanner.hasNextLine()) {
+                stringBuilder.append("\n");
+            }
+        }
+        scanner.close();
+        return stringBuilder.toString();
+    }
+
+    private boolean isEqualOutput(String actual, String expected) {
+        return actual.trim().equals(expected.trim());
+    }
 }
