@@ -2,6 +2,7 @@ package ru.sibint.topcoder.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ru.sibint.topcoder.exceptions.UnprocessableEntityException;
@@ -61,7 +62,12 @@ public class SubmissionService {
             return SubmissionResponseDto.builder()
                     .id(submission.getId())
                     .comment(result)
-                    .overallVerdict("Complication error")
+                    .overallVerdict("Compilation error")
+                    .testsResults(List.of(TestResultDto.builder()
+                                    .number(1)
+                                    .verdict("Compilation error")
+                                    .output(result)
+                            .build()))
                     .build();
         }
         List<TestResultDto> testResults = new ArrayList<>();
@@ -71,9 +77,11 @@ public class SubmissionService {
             TestResultDto testResult = runTest(i + 1, tempDir + submission.getId().toString(), className, test);
             testResults.add(testResult);
             if(!"Accepted".equals(testResult.getVerdict())) {
+                overallStatus = testResult.getVerdict();
                 break;
             }
         }
+        FileUtils.deleteDirectory(new File(tempDir + submission.getId().toString()));
         return SubmissionResponseDto.builder()
                 .id(submission.getId())
                 .overallVerdict(overallStatus)
@@ -84,8 +92,9 @@ public class SubmissionService {
     private String compile(String dir, String sources, String className) throws Exception {
         Files.createDirectories(Path.of(dir));
         File workingDir = new File(dir);
+        saveToFile(dir + "/compile.sh", readInputStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("compile.sh")));
         saveToFile(dir + "/" + className + ".java", sources);
-        ProcessBuilder compileProcessBuilder = new ProcessBuilder("javac", className + ".java");
+        ProcessBuilder compileProcessBuilder = new ProcessBuilder("sh", "./compile.sh", className + ".java");
         compileProcessBuilder.directory(workingDir);
         compileProcessBuilder.redirectErrorStream(true);
         Process compileProcess = compileProcessBuilder.start();
@@ -94,7 +103,7 @@ public class SubmissionService {
         } catch (InterruptedException e) {
             return "Compilation failed";
         }
-        return readInputStream(compileProcess.getErrorStream());
+        return readOutputFromFile(dir + "/compiledata.txt");
     }
 
     private TestResultDto runTest(int id, String dir, String className, TestDto test) throws Exception {
