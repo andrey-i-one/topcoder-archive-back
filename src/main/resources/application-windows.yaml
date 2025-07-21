@@ -17,5 +17,6 @@ spring:
         default_schema: cdm
 tempDir: "D:/temp/"
 compileTimeout: 3000
+memoryLimit: 268435456
 server:
   port: 8084

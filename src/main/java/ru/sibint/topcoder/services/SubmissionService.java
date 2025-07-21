@@ -42,6 +42,9 @@ public class SubmissionService {
     @Value("${compileTimeout}")
     Long compileTimeout;
 
+    @Value("${memoryLimit}")
+    Long memoryLimit;
+
     public SubmissionResponseDto createSubmission(SubmissionRequestDto submissionRequestDto) throws Exception {
         Problem problem = problemRepository.findById(submissionRequestDto.getTaskId()).orElseThrow(() -> new UnprocessableEntityException("No problem for given id"));
         Submission submission = Submission.builder()
@@ -77,6 +80,12 @@ public class SubmissionService {
             TestDto test = submissionRequestDto.getTests().get(i);
             TestResultDto testResult = runTest(i + 1, tempDir + submission.getId().toString(), className, test);
             testResults.add(testResult);
+            if(testResult.getMemory() != null) {
+                long currentMemoryConsumption = Integer.parseInt(testResult.getMemory());
+                if(currentMemoryConsumption * 1024L > memoryLimit) {
+                    testResult.setVerdict("Memory limit exceeded");
+                }
+            }
             if(!"Accepted".equals(testResult.getVerdict())) {
                 overallStatus = testResult.getVerdict();
                 break;
