@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import ru.sibint.topcoder.enums.Language;
+import ru.sibint.topcoder.enums.Verdict;
 import ru.sibint.topcoder.exceptions.UnprocessableEntityException;
 import ru.sibint.topcoder.generated.dto.SubmissionRequestDto;
 import ru.sibint.topcoder.generated.dto.SubmissionResponseDto;
@@ -14,14 +16,14 @@ import ru.sibint.topcoder.model.Problem;
 import ru.sibint.topcoder.model.Submission;
 import ru.sibint.topcoder.repos.ProblemRepository;
 import ru.sibint.topcoder.repos.SubmissionRepository;
+import ru.sibint.topcoder.utils.IOUtils;
 
-import java.io.*;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,6 +34,17 @@ import java.util.regex.Pattern;
 public class SubmissionService {
 
     private final String JAVA_CLASS_REGEX = "[^{}]*public\\s+(final)?\\s*class\\s+(\\w+).*";
+    private final String CPP_FILE_NAME = "main";
+    private final String COMPILE_SCRIPT_NAME = "compile.sh";
+    private final String RUN_SCRIPT_NAME = "run_test.sh";
+    private final String COMPILE_DATA_FILE = "compiledata.txt";
+    private final String INPUT_FILE_NAME = "input.txt";
+    private final String OUTPUT_FILE_NAME = "output.txt";
+    private final String METADATA_FILE_NAME = "metadata.txt";
+    private final String LINE_BREAK = "\n";
+    private final String COMMAND = "sh";
+    private final String SYSTEM_TIME_LINE_START = "System time (seconds): ";
+    private final String MEMORY_LINE_START = "Maximum resident set size (kbytes): ";
 
     private final SubmissionRepository submissionRepository;
     private final ProblemRepository problemRepository;
@@ -46,6 +59,10 @@ public class SubmissionService {
     Long memoryLimit;
 
     public SubmissionResponseDto createSubmission(SubmissionRequestDto submissionRequestDto) throws Exception {
+        Language language = Language.fromValue(submissionRequestDto.getLanguage());
+        if(language == null) {
+            throw new UnprocessableEntityException("No language is not supported");
+        }
         Problem problem = problemRepository.findById(submissionRequestDto.getTaskId()).orElseThrow(() -> new UnprocessableEntityException("No problem for given id"));
         Submission submission = Submission.builder()
                 .sources(submissionRequestDto.getSources())
@@ -54,97 +71,74 @@ public class SubmissionService {
                 .problem(problem)
                 .build();
         submissionRepository.save(submission);
-        String className = null;
-        String extension = null;
-        String runExtension = null;
-        if(submissionRequestDto.getLanguage().equals("java")) {
-            Pattern pattern = Pattern.compile(JAVA_CLASS_REGEX);
-            Matcher matcher = pattern.matcher(submissionRequestDto.getSources());
-            if(matcher.find()) {
-                className = matcher.group(2);
-            }
-            extension = ".java";
-            runExtension = "";
-        }
-        if(submissionRequestDto.getLanguage().equals("csharp")) {
-            Pattern pattern = Pattern.compile(JAVA_CLASS_REGEX);
-            Matcher matcher = pattern.matcher(submissionRequestDto.getSources());
-            if(matcher.find()) {
-                className = matcher.group(2);
-            }
-            extension = ".cs";
-            runExtension = ".exe";
-        }
-        if(submissionRequestDto.getLanguage().equals("cpp")) {
-            className = "main";
-            extension = ".cpp";
-            runExtension = ".out";
-        }
-        String result = compile(tempDir + submission.getId().toString(), submissionRequestDto.getSources(), className + extension, submissionRequestDto.getLanguage());
-        if(!result.isEmpty() && !submissionRequestDto.getLanguage().equals("csharp") || submissionRequestDto.getLanguage().equals("csharp") && result.contains("error")) {
-            FileUtils.deleteDirectory(new File(tempDir + submission.getId().toString()));
+        String workingDir = tempDir + submission.getId().toString() + "/";
+        String className = getClassName(language, submissionRequestDto.getSources());
+
+        String compilationResult = compile(workingDir, submissionRequestDto.getSources(), className + language.getExtension(), language);
+        if(!compilationResult.isEmpty() && language != Language.C_SHARP || language == Language.C_SHARP && compilationResult.contains("error")) {
+            FileUtils.deleteDirectory(new File(workingDir));
             return SubmissionResponseDto.builder()
                     .id(submission.getId())
-                    .comment(result)
-                    .overallVerdict("Compilation error")
+                    .comment(compilationResult)
+                    .overallVerdict(Verdict.COMPILATION_ERROR.value())
                     .testsResults(List.of(TestResultDto.builder()
                                     .number(1)
-                                    .verdict("Compilation error")
-                                    .output(result)
+                                    .verdict(Verdict.COMPILATION_ERROR.value())
+                                    .output(compilationResult)
                             .build()))
                     .build();
         }
         List<TestResultDto> testResults = new ArrayList<>();
-        String overallStatus = "Accepted";
+        Verdict overallStatus = Verdict.ACCEPTED;
         for(int i = 0; i < submissionRequestDto.getTests().size(); i++) {
             TestDto test = submissionRequestDto.getTests().get(i);
-            TestResultDto testResult = runTest(i + 1, tempDir + submission.getId().toString(), className + runExtension, submissionRequestDto.getLanguage(), test);
+            TestResultDto testResult = runTest(i + 1, workingDir, className + language.getRunExtension(), language, test);
             testResults.add(testResult);
             if(testResult.getMemory() != null) {
                 long currentMemoryConsumption = Integer.parseInt(testResult.getMemory());
                 if(currentMemoryConsumption * 1024L > memoryLimit) {
-                    testResult.setVerdict("Memory limit exceeded");
+                    testResult.setVerdict(Verdict.MEMORY_LIMIT_EXCEEDED.value());
                 }
             }
-            if(!"Accepted".equals(testResult.getVerdict())) {
-                overallStatus = testResult.getVerdict();
+            if(!Verdict.ACCEPTED.value().equals(testResult.getVerdict())) {
+                overallStatus = Verdict.fromValue(testResult.getVerdict());
                 break;
             }
         }
-        FileUtils.deleteDirectory(new File(tempDir + submission.getId().toString()));
+        FileUtils.deleteDirectory(new File(workingDir));
         return SubmissionResponseDto.builder()
                 .id(submission.getId())
-                .overallVerdict(overallStatus)
+                .overallVerdict(overallStatus == null ? null :overallStatus.value())
                 .testsResults(testResults)
                 .build();
     }
 
-    private String compile(String dir, String sources, String sourceFileName, String language) throws Exception {
+    private String compile(String dir, String sources, String sourceFileName, Language language) throws Exception {
         Files.createDirectories(Path.of(dir));
         File workingDir = new File(dir);
-        saveToFile(dir + "/compile.sh", readInputStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("compile_" + language + ".sh")));
-        saveToFile(dir + "/" + sourceFileName, sources);
-        ProcessBuilder compileProcessBuilder = new ProcessBuilder("sh", "compile.sh", sourceFileName);
+        IOUtils.saveToFile(dir + COMPILE_SCRIPT_NAME, IOUtils.readInputStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("compile_" + language.getValue() + ".sh")));
+        IOUtils.saveToFile(dir + sourceFileName, sources);
+        ProcessBuilder compileProcessBuilder = new ProcessBuilder(COMMAND, COMPILE_SCRIPT_NAME, sourceFileName);
         compileProcessBuilder.directory(workingDir);
         compileProcessBuilder.redirectErrorStream(true);
         Process compileProcess = compileProcessBuilder.start();
         try {
             compileProcess.waitFor(compileTimeout, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            return "Compilation failed";
+            return Verdict.COMPILATION_ERROR.value();
         }
-        return readOutputFromFile(dir + "/compiledata.txt");
+        return IOUtils.readOutputFromFile(dir + COMPILE_DATA_FILE);
     }
 
-    private TestResultDto runTest(int id, String dir, String compiledName, String language, TestDto test) throws Exception {
+    private TestResultDto runTest(int id, String dir, String compiledName, Language language, TestDto test) throws Exception {
         File workingDir = new File(dir);
-        saveToFile(dir + "/run_test.sh", readInputStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("run_test_" + language + ".sh")));
-        saveToFile(dir + "/input.txt", test.getInput());
+        IOUtils.saveToFile(dir + RUN_SCRIPT_NAME, IOUtils.readInputStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("run_test_" + language.getValue() + ".sh")));
+        IOUtils.saveToFile(dir + INPUT_FILE_NAME, test.getInput());
 
-        ProcessBuilder runProcessBuilder = new ProcessBuilder("sh", "run_test.sh", compiledName);
+        ProcessBuilder runProcessBuilder = new ProcessBuilder(COMMAND, RUN_SCRIPT_NAME, compiledName);
         runProcessBuilder.directory(workingDir);
         Process runProcess = runProcessBuilder.start();
-        String verdict = "Accepted";
+        Verdict verdict = Verdict.ACCEPTED;
         boolean finished;
         try {
             finished = runProcess.waitFor(compileTimeout, TimeUnit.MILLISECONDS);
@@ -155,32 +149,32 @@ public class SubmissionService {
             runProcess.destroyForcibly();
             return TestResultDto.builder()
                     .number(id)
-                    .verdict("Time limit exceeded")
+                    .verdict(Verdict.TIME_LIMIT_EXCEEDED.value())
                     .output(null)
                     .expectedOutput(test.getExpectedOutput())
-                    .time((compileTimeout / 1000.0) + "")
+                    .time(String.valueOf(compileTimeout / 1000.0))
                     .memory(null)
                     .build();
         }
-        String actualOutput = readOutputFromFile(dir + "/output.txt");
-        if(!isEqualOutput(actualOutput, test.getExpectedOutput())) {
-            verdict = "Wrong answer";
+        String actualOutput = IOUtils.readOutputFromFile(dir + OUTPUT_FILE_NAME);
+        if(!IOUtils.isEqualOutput(actualOutput, test.getExpectedOutput())) {
+            verdict = Verdict.WRONG_ANSWER;
         }
-        String output = readOutputFromFile(dir + "/metadata.txt");
-        String[] outputLines = output.split("\n");
+        String output = IOUtils.readOutputFromFile(dir + METADATA_FILE_NAME);
+        String[] outputLines = output.split(LINE_BREAK);
         String time = null;
         String memory = null;
         for(String outputLine: outputLines) {
-            if(outputLine.trim().startsWith("System time (seconds): ")) {
-                time = outputLine.trim().substring("System time (seconds): ".length());
+            if(outputLine.trim().startsWith(SYSTEM_TIME_LINE_START)) {
+                time = outputLine.trim().substring(SYSTEM_TIME_LINE_START.length());
             }
-            if(outputLine.trim().startsWith("Maximum resident set size (kbytes): ")) {
-                memory = outputLine.trim().substring("Maximum resident set size (kbytes): ".length());
+            if(outputLine.trim().startsWith(MEMORY_LINE_START)) {
+                memory = outputLine.trim().substring(MEMORY_LINE_START.length());
             }
         }
         return TestResultDto.builder()
                 .number(id)
-                .verdict(verdict)
+                .verdict(verdict.value())
                 .output(actualOutput)
                 .expectedOutput(test.getExpectedOutput())
                 .time(time)
@@ -188,37 +182,14 @@ public class SubmissionService {
                 .build();
     }
 
-    private void saveToFile(String fileName, String content) throws Exception {
-        PrintWriter printWriter = new PrintWriter(fileName);
-        printWriter.print(content);
-        printWriter.flush();
-        printWriter.close();
-    }
-
-    private String readInputStream(InputStream is) throws Exception {
-        BufferedReader in = new BufferedReader(new InputStreamReader(is));
-        StringBuilder lines = new StringBuilder();
-        String line;
-        while ((line = in.readLine()) != null) {
-            lines.append(line).append("\n");
+    private String getClassName(Language language, String sources) {
+        if(language == Language.CPP) return CPP_FILE_NAME;
+        Pattern pattern = Pattern.compile(JAVA_CLASS_REGEX);
+        Matcher matcher = pattern.matcher(sources);
+        if(matcher.find()) {
+            return matcher.group(2);
         }
-        return lines.toString().trim();
+        return null;
     }
 
-    private String readOutputFromFile(String fileName) throws Exception {
-        Scanner scanner = new Scanner(new File(fileName));
-        StringBuilder stringBuilder = new StringBuilder();
-        while(scanner.hasNextLine()) {
-            stringBuilder.append(scanner.nextLine());
-            if(scanner.hasNextLine()) {
-                stringBuilder.append("\n");
-            }
-        }
-        scanner.close();
-        return stringBuilder.toString();
-    }
-
-    private boolean isEqualOutput(String actual, String expected) {
-        return actual.trim().equals(expected.trim());
-    }
 }
