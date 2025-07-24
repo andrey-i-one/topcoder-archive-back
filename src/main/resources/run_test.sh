@@ -1,1 +1,0 @@
-/usr/bin/time -v java $1 < input.txt > output.txt 2> metadata.txt

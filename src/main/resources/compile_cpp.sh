@@ -1,0 +1,1 @@
+g++ -o main.out main.cpp 2> compiledata.txt

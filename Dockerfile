@@ -18,7 +18,9 @@ RUN apt-get update
 RUN apt-get -y install bash
 RUN apt-get -y install time
 RUN apt-get install -y cgroup-tools
+RUN apt-get -y install g++
 RUN ulimit -S -m 268435456
+RUN apt-get update && apt-get -y install gcc mono-mcs && rm -rf /var/lib/apt/lists/*
 # RUN cgcreate -a root -g memory:topcoder256mb
 # RUN echo '268435456' > /sys/fs/cgroup/memory/topcoder256mb/memory.limit_in_bytes
 

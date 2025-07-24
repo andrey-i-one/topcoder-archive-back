@@ -54,14 +54,34 @@ public class SubmissionService {
                 .problem(problem)
                 .build();
         submissionRepository.save(submission);
-        Pattern pattern = Pattern.compile(JAVA_CLASS_REGEX);
-        Matcher matcher = pattern.matcher(submissionRequestDto.getSources());
         String className = null;
-        if(matcher.find()) {
-            className = matcher.group(2);
+        String extension = null;
+        String runExtension = null;
+        if(submissionRequestDto.getLanguage().equals("java")) {
+            Pattern pattern = Pattern.compile(JAVA_CLASS_REGEX);
+            Matcher matcher = pattern.matcher(submissionRequestDto.getSources());
+            if(matcher.find()) {
+                className = matcher.group(2);
+            }
+            extension = ".java";
+            runExtension = "";
         }
-        String result = compile(tempDir + submission.getId().toString(), submissionRequestDto.getSources(), className);
-        if(!result.isEmpty()) {
+        if(submissionRequestDto.getLanguage().equals("csharp")) {
+            Pattern pattern = Pattern.compile(JAVA_CLASS_REGEX);
+            Matcher matcher = pattern.matcher(submissionRequestDto.getSources());
+            if(matcher.find()) {
+                className = matcher.group(2);
+            }
+            extension = ".cs";
+            runExtension = ".exe";
+        }
+        if(submissionRequestDto.getLanguage().equals("cpp")) {
+            className = "main";
+            extension = ".cpp";
+            runExtension = ".out";
+        }
+        String result = compile(tempDir + submission.getId().toString(), submissionRequestDto.getSources(), className + extension, submissionRequestDto.getLanguage());
+        if(!result.isEmpty() && !submissionRequestDto.getLanguage().equals("csharp") || submissionRequestDto.getLanguage().equals("csharp") && result.contains("error")) {
             FileUtils.deleteDirectory(new File(tempDir + submission.getId().toString()));
             return SubmissionResponseDto.builder()
                     .id(submission.getId())
@@ -78,7 +98,7 @@ public class SubmissionService {
         String overallStatus = "Accepted";
         for(int i = 0; i < submissionRequestDto.getTests().size(); i++) {
             TestDto test = submissionRequestDto.getTests().get(i);
-            TestResultDto testResult = runTest(i + 1, tempDir + submission.getId().toString(), className, test);
+            TestResultDto testResult = runTest(i + 1, tempDir + submission.getId().toString(), className + runExtension, submissionRequestDto.getLanguage(), test);
             testResults.add(testResult);
             if(testResult.getMemory() != null) {
                 long currentMemoryConsumption = Integer.parseInt(testResult.getMemory());
@@ -99,12 +119,12 @@ public class SubmissionService {
                 .build();
     }
 
-    private String compile(String dir, String sources, String className) throws Exception {
+    private String compile(String dir, String sources, String sourceFileName, String language) throws Exception {
         Files.createDirectories(Path.of(dir));
         File workingDir = new File(dir);
-        saveToFile(dir + "/compile.sh", readInputStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("compile.sh")));
-        saveToFile(dir + "/" + className + ".java", sources);
-        ProcessBuilder compileProcessBuilder = new ProcessBuilder("sh", "./compile.sh", className + ".java");
+        saveToFile(dir + "/compile.sh", readInputStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("compile_" + language + ".sh")));
+        saveToFile(dir + "/" + sourceFileName, sources);
+        ProcessBuilder compileProcessBuilder = new ProcessBuilder("sh", "compile.sh", sourceFileName);
         compileProcessBuilder.directory(workingDir);
         compileProcessBuilder.redirectErrorStream(true);
         Process compileProcess = compileProcessBuilder.start();
@@ -116,12 +136,12 @@ public class SubmissionService {
         return readOutputFromFile(dir + "/compiledata.txt");
     }
 
-    private TestResultDto runTest(int id, String dir, String className, TestDto test) throws Exception {
+    private TestResultDto runTest(int id, String dir, String compiledName, String language, TestDto test) throws Exception {
         File workingDir = new File(dir);
-        saveToFile(dir + "/run_test.sh", readInputStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("run_test.sh")));
+        saveToFile(dir + "/run_test.sh", readInputStream(Thread.currentThread().getContextClassLoader().getResourceAsStream("run_test_" + language + ".sh")));
         saveToFile(dir + "/input.txt", test.getInput());
 
-        ProcessBuilder runProcessBuilder = new ProcessBuilder("sh", "./run_test.sh", className);
+        ProcessBuilder runProcessBuilder = new ProcessBuilder("sh", "run_test.sh", compiledName);
         runProcessBuilder.directory(workingDir);
         Process runProcess = runProcessBuilder.start();
         String verdict = "Accepted";

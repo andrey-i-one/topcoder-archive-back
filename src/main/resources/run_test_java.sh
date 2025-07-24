@@ -1,0 +1,1 @@
+/usr/bin/time -v java -Xmx256m $1 < input.txt > output.txt 2> metadata.txt

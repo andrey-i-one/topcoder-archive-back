@@ -1,0 +1,1 @@
+dmcs $1 2> compiledata.txt
