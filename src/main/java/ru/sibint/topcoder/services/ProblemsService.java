@@ -13,6 +13,7 @@ import ru.sibint.topcoder.model.QProblem;
 import ru.sibint.topcoder.repos.ProblemRepository;
 
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.UUID;
 
 @Slf4j
@@ -22,6 +23,7 @@ public class ProblemsService {
 
     private final ProblemRepository problemRepository;
     private final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+    private final TestService testService;
 
     public ProblemsPageDto retrieveProblems(Integer page,
                                             Integer perPage,
@@ -84,6 +86,7 @@ public class ProblemsService {
                                 .input(it.getInput())
                                 .expectedOutput(it.getExpectedOutput())
                                 .build())
+                        .sorted(Comparator.comparingInt(o -> Integer.parseInt(o.getId())))
                         .toList())
                 .build();
     }
