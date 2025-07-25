@@ -36,9 +36,6 @@ public class ProblemsService {
                                             String tags,
                                             String div1Level,
                                             String div2Level) throws Exception {
-        log.info("STARTED");
-        testService.fillTests();
-        log.info("DONE");
         Pageable pageable = PageRequest.of(page, perPage).withSort(Sort.by(Sort.Direction.valueOf(sortOrder), sortField));
         Page<Problem> pages = problemRepository.findAll(
                 QProblem.problem.tags.likeIgnoreCase("%" + (tags == null ? "" : tags) + "%").and(
