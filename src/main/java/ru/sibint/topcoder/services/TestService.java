@@ -28,7 +28,7 @@ public class TestService {
         int failedCount = 0;
         for(Problem problem: problems) {
             if(count % 100 == 0) {
-                log.info(String.valueOf(count / (problems.size() + 0.0) * 100.0));
+                log.info("{}% completed", String.valueOf(count / (problems.size() + 0.0) * 100.0));
             }
             count++;
             int testsCountInDb = problem.getTests() == null ? 0 : problem.getTests().size();

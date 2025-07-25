@@ -11,7 +11,6 @@ import ru.sibint.topcoder.generated.dto.*;
 import ru.sibint.topcoder.model.Problem;
 import ru.sibint.topcoder.model.QProblem;
 import ru.sibint.topcoder.repos.ProblemRepository;
-import ru.sibint.topcoder.utils.ExamplesParser;
 
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -22,9 +21,7 @@ import java.util.UUID;
 public class ProblemsService {
 
     private final ProblemRepository problemRepository;
-    private final ExamplesParser examplesParser;
     private final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
-    private final TestService testService;
 
     public ProblemsPageDto retrieveProblems(Integer page,
                                             Integer perPage,
