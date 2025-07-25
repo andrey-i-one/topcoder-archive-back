@@ -27,6 +27,7 @@ public class ProblemsService {
     private final ProblemRepository problemRepository;
     private final ExamplesParser examplesParser;
     private final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+    private final TestService testService;
 
     public ProblemsPageDto retrieveProblems(Integer page,
                                             Integer perPage,
@@ -35,6 +36,9 @@ public class ProblemsService {
                                             String tags,
                                             String div1Level,
                                             String div2Level) throws Exception {
+        log.info("STARTED");
+        testService.fillTests();
+        log.info("DONE");
         Pageable pageable = PageRequest.of(page, perPage).withSort(Sort.by(Sort.Direction.valueOf(sortOrder), sortField));
         Page<Problem> pages = problemRepository.findAll(
                 QProblem.problem.tags.likeIgnoreCase("%" + (tags == null ? "" : tags) + "%").and(

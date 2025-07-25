@@ -25,3 +25,13 @@ CREATE TABLE oj.submission (
 );
 ALTER TABLE oj.submission ADD submit_time timestamp NULL;
 ALTER TABLE oj.submission ADD author varchar(255) NULL;
+ALTER TABLE oj.submission ADD CONSTRAINT problem_unique UNIQUE (id);
+
+CREATE TABLE oj.test (
+	id varchar(255) NULL,
+	"input" text NULL,
+	expected_output text NULL,
+	task_id varchar(255) NULL,
+	num int4 NULL
+);
+ALTER TABLE oj.test ADD CONSTRAINT problem_unique UNIQUE (id);

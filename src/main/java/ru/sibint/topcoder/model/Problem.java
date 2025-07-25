@@ -7,6 +7,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import java.sql.Types;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -65,4 +66,6 @@ public class Problem {
     @Column(name = "definition")
     private String definition;
 
+    @OneToMany(mappedBy = "problem", fetch = FetchType.LAZY)
+    private Set<Test> tests;
 }
