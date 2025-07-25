@@ -11,4 +11,4 @@ docker network connect topcoder-net topcoderdb
 
 ## Run topcoder-api container
 docker image build . -t topcoder-container
-docker run --privileged --name topcoder-back --network=topcoder-net -p 8084:8084 -d topcoder-container 
+docker run --privileged --name topcoder-back --network=topcoder-net -p 8084:8084 -d topcoder-container

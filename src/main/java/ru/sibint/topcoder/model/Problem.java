@@ -29,6 +29,9 @@ public class Problem {
     @Column(name = "srm")
     private String srm;
 
+    @Column(name = "writer")
+    private String writer;
+
     @Column(name = "tags")
     private String tags;
 

@@ -19,4 +19,4 @@ tempDir: "D:/temp/"
 compileTimeout: 3000
 memoryLimit: 268435456
 server:
-  port: 8084
+  port: 8085

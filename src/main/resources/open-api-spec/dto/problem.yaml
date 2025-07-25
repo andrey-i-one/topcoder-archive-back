@@ -8,6 +8,10 @@ components:
           format: uuid
         name:
           type: string
+        author:
+          type: string
+        authorLink:
+          type: string
         srm:
           type: string
         date:
@@ -29,6 +33,10 @@ components:
           type: string
           format: uuid
         name:
+          type: string
+        author:
+          type: string
+        authorLink:
           type: string
         srm:
           type: string
