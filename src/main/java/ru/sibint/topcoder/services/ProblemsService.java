@@ -7,10 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import ru.sibint.topcoder.generated.dto.PageInfo;
-import ru.sibint.topcoder.generated.dto.ProblemDetailsDto;
-import ru.sibint.topcoder.generated.dto.ProblemDto;
-import ru.sibint.topcoder.generated.dto.ProblemsPageDto;
+import ru.sibint.topcoder.generated.dto.*;
 import ru.sibint.topcoder.model.Problem;
 import ru.sibint.topcoder.model.QProblem;
 import ru.sibint.topcoder.repos.ProblemRepository;
@@ -84,7 +81,13 @@ public class ProblemsService {
                 .tags(problem.getTags())
                 .statement(problem.getStatement())
                 .examples(problem.getExamples())
-                .tests(examplesParser.parseExamples("<root>" + problem.getExamples() + "</root>"))
+                .tests(problem.getTests() == null ? null : problem.getTests().stream().map(it ->
+                        TestDto.builder()
+                                .id(it.getNumber().toString())
+                                .input(it.getInput())
+                                .expectedOutput(it.getExpectedOutput())
+                                .build())
+                        .toList())
                 .build();
     }
 

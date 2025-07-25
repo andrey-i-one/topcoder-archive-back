@@ -2,6 +2,7 @@ package ru.sibint.topcoder.utils;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.sibint.topcoder.generated.dto.TestDto;
 
@@ -11,11 +12,16 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class ExamplesParser {
 
     public List<TestDto> parseExamples(String input) throws Exception {
+        input = input.replace("&nbsp;", "");
         XmlMapper xmlMapper = new XmlMapper();
         Map example = xmlMapper.readValue(input, Map.class);
+        if(example.get("ol").getClass().getName().equals("java.lang.String")) {
+            return new ArrayList<>();
+        }
         List<Map> tests = (List<Map>)(((Map<String, Object>)example.get("ol")).get("li"));
         List<TestDto> testsToReturn = new ArrayList<>();
         int id = 0;
